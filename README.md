@@ -9,6 +9,9 @@ Usage instructions:
 > [!WARNING]  
 > The `CreateAppInstaller()` WinRT function does not exist. `CreatePackageManager()` must be used instead.
 
+> [!CAUTION]  
+> If an elevated process initializes WinGet with the `WindowsPackageManagerStandardFactory()` class, the method `CreatePackageManager()` will crash. The class `WindowsPackageManagerElevatedFactory()` must be used instead
+
 
 # Usage example
 The following example can be found on the `Demo Console App` project on this same repository.
