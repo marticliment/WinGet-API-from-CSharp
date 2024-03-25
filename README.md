@@ -3,7 +3,7 @@ Minimal example on how to use WinGet COM APIs from C#.NET.
 
 The code on the project named `WindowsPackageManager Interop` was extracted and modified from [Dev Home](https://github.com/microsoft/devhome/).
 
-Usage instructions:
+## Usage instructions:
 1. Add the `WindowsPackageManager Interop.csproj` to your solution
 2. Import the `WindowsPackageManager.Interop` Namespace.
 3. Create a WinGet Package Manager Factory using the `WindowsPackageManagerStandardFactory` class.
