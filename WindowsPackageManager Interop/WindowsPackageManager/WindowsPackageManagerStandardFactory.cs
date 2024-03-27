@@ -21,7 +21,7 @@ public class WindowsPackageManagerStandardFactory : WindowsPackageManagerFactory
         var pUnknown = IntPtr.Zero;
         try
         {
-            var hr = PInvoke.CoCreateInstance(clsid, null, CLSCTX.CLSCTX_LOCAL_SERVER, iid, out var result);
+            var hr = PInvoke.CoCreateInstance(clsid, null, CLSCTX.CLSCTX_ALL, iid, out var result);
             Marshal.ThrowExceptionForHR(hr);
             pUnknown = Marshal.GetIUnknownForObject(result);
             return MarshalGeneric<T>.FromAbi(pUnknown);
