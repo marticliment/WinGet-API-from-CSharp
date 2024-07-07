@@ -1,4 +1,7 @@
-﻿using System.Security.Principal;
+﻿using Microsoft.Management.Deployment;
+using System.Security.Principal;
+using Windows.ApplicationModel;
+
 
 // Include WinGet Namespace
 using WindowsPackageManager.Interop;
@@ -9,53 +12,53 @@ namespace WingetTest
     {
         static public void Main(string[] args)
         {
-            while(true)
+            // var WinGetFactory = new WindowsPackageManagerElevatedFactory();
+            var WinGetFactory = new WindowsPackageManagerStandardFactory();
+            var WinGetManager = WinGetFactory.CreatePackageManager();
+
+            // CHANGE THIS INDEX
+            int selectedIndex = 0;
+            
+            PackageCatalogReference installedSearchCatalogRef;
+            if (selectedIndex < 0)
             {
-                Console.WriteLine("                    ");
-                Console.Write("Enter search query: ");
-                string? Query = Console.ReadLine();
-                if(Query == null || Query == "")
-                    break;
-
-                FindPackagesForQuery(Query).Wait();
+                installedSearchCatalogRef = WinGetManager.GetLocalPackageCatalog(LocalPackageCatalog.InstalledPackages);
             }
-        }
-
-        private static async Task FindPackagesForQuery(string Query)
-        {   
-            WindowsPackageManagerFactory WinGetFactory;
-            bool IsAdministrator = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
-
-            // If the user is an administrator, use the elevated factory. Otherwhise COM will crash
-            if(IsAdministrator)
-                WinGetFactory = new WindowsPackageManagerElevatedFactory();
             else
-                WinGetFactory = new WindowsPackageManagerStandardFactory();
-
-            // Create Package Manager and get available catalogs
-            var Manager = WinGetFactory.CreatePackageManager();
-            var AvailableCatalogs = Manager.GetPackageCatalogs();
-                        
-            foreach (var Catalog in AvailableCatalogs.ToArray())
             {
-                // Create a filter to search for packages
-                var FilterList = WinGetFactory.CreateFindPackagesOptions();
-
-                // Add the query to the filter
-                var NameFilter = WinGetFactory.CreatePackageMatchFilter();
-                NameFilter.Field = Microsoft.Management.Deployment.PackageMatchField.Name;
-                NameFilter.Value = Query;
-                FilterList.Filters.Add(NameFilter);
-
-                // Find the packages with the filters
-                var SearchResults = await Catalog.Connect().PackageCatalog.FindPackagesAsync(FilterList);
-                foreach (var Match in SearchResults.Matches.ToArray())
-                {
-                    // Print the packages
-                    var Package = Match.CatalogPackage;
-                    Console.WriteLine(Package.Name);
-                }
+                PackageCatalogReference selectedRemoteCatalogRef = WinGetManager.GetPackageCatalogs().ToArray().ElementAt(selectedIndex);
+                
+                Console.WriteLine($"Searching on package catalog {selectedRemoteCatalogRef.Info.Name} ");
+                CreateCompositePackageCatalogOptions createCompositePackageCatalogOptions = WinGetFactory.CreateCreateCompositePackageCatalogOptions();
+                createCompositePackageCatalogOptions.Catalogs.Add(selectedRemoteCatalogRef);
+                createCompositePackageCatalogOptions.CompositeSearchBehavior = CompositeSearchBehavior.LocalCatalogs;
+                installedSearchCatalogRef = WinGetManager.CreateCompositePackageCatalog(createCompositePackageCatalogOptions);
             }
+            
+            var ConnectResult = installedSearchCatalogRef.Connect();
+            if (ConnectResult.Status != ConnectResultStatus.Ok)
+            {
+                throw new Exception("WinGet: Failed to connect to local catalog.");
+            }
+
+            FindPackagesOptions findPackagesOptions = WinGetFactory.CreateFindPackagesOptions();
+            PackageMatchFilter filter = WinGetFactory.CreatePackageMatchFilter();
+            filter.Field = PackageMatchField.Id;
+            filter.Option = PackageFieldMatchOption.ContainsCaseInsensitive;
+            filter.Value = "";
+            findPackagesOptions.Filters.Add(filter);
+
+            var TaskResult = ConnectResult.PackageCatalog.FindPackages(findPackagesOptions);
+
+            Console.WriteLine("Begin enumeration");
+            foreach (var match in TaskResult.Matches.ToArray())
+            {
+                if (match.CatalogPackage.DefaultInstallVersion != null)
+                    Console.WriteLine($"Package {match.CatalogPackage.Name} is available Online: " + match.CatalogPackage.DefaultInstallVersion.PackageCatalog.Info.Name);
+                //else
+                    //Console.WriteLine("Package is local only: " + match.CatalogPackage.Id);
+            }
+            Console.WriteLine("End enumeration");
         }
     }
 }

@@ -7,7 +7,7 @@ using Microsoft.Management.Deployment;
 
 namespace WindowsPackageManager.Interop;
 
-internal static class ClassesDefinition
+public static class ClassesDefinition
 {
     private static Dictionary<Type, ClassModel> Classes { get; } = new()
     {
