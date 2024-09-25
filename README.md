@@ -11,9 +11,18 @@ The code on the project named `WindowsPackageManager Interop` was extracted and 
 > [!WARNING]  
 > The `CreateAppInstaller()` WinRT function does not exist. `CreatePackageManager()` must be used instead.
 
-> [!CAUTION]  
-> If an elevated process initializes WinGet with the `WindowsPackageManagerStandardFactory()` class, the method `CreatePackageManager()` will crash. The class `WindowsPackageManagerElevatedFactory()` must be used instead
+<br>
 
+## ⚠️Important notes about running with admin rights⚠️
+If an elevated process initializes WinGet with the `WindowsPackageManagerStandardFactory()` class, the method `CreatePackageManager()` will crash. The class `WindowsPackageManagerElevatedFactory()` must be used instead. 
+
+However, under certain scenarios (for example, Unpackaged, self-contained AppSdk executable with RegFree-WinRT enabled), the `WindowsPackageManagerElevatedFactory()` method may crash your program (no exception, just a hard crash, the bug report can be seen here: https://github.com/microsoft/winget-cli/issues/4377). 
+
+In such case, it may be needed to use the `WindowsPackageManagerStandardFactory()` class, but modifying the CreateInstance method as shown [here (this is how it works on UniGetUI)](https://github.com/marticliment/UniGetUI/blob/9d73f284edfd0e9c26a2a8d3d72187180ea3af23/src/WindowsPackageManager.Interop/WindowsPackageManager/WindowsPackageManagerStandardFactory.cs#L23-L29) so that the undocumented `CLSCTX.CLSCTX_ALLOW_LOWER_TRUST_REGISTRATION` flag is passed to `PInvoke.CoCreateInstance`. 
+
+DISCLAIMER: I am no COM expert so I don't know the potential side effects of this undocumented flag. Use at your own risk.
+
+<br>
 
 # Usage example
 The following example can be found on the `Demo Console App` project on this same repository.
